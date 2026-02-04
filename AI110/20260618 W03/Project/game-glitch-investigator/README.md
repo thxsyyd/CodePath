@@ -23,10 +23,16 @@ It wrote the code, ran away, and now the game is unplayable.
    - Run `pytest` in your terminal.
    - Keep fixing until all tests pass!
 
+## Document Your Experience
+
+- [ ] Describe the game's purpose.
+- [ ] Detail which bugs you found.
+- [ ] Explain what fixes you applied.
+
 ## 📸 Demo
 
-[Insert a screenshot of your fixed, winning game here]
+- [ ] [Insert a screenshot of your fixed, winning game here]
 
 ## 🚀 Stretch Features
 
-[If you choose to complete Challenge 4, insert a screenshot of your Enhanced Game UI here]
+- [ ] [If you choose to complete Challenge 4, insert a screenshot of your Enhanced Game UI here]
