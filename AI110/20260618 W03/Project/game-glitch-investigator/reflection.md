@@ -13,8 +13,8 @@ Answer each question in 3 to 5 sentences. Be specific and honest about what actu
 ## 2. How did you use AI as a teammate?
 
 - Which AI tools did you use on this project (for example: ChatGPT, Gemini, Copilot)?
-- Give one example of an AI suggestion you accepted and why.
-- Give one example of an AI suggestion you changed or rejected and why.
+- Give one example of an AI suggestion that was correct (including what the AI suggested and how you verified the result).
+- Give one example of an AI suggestion that incorrect or misleading (including what the AI suggested and how you verified the result).
 
 ---
 
