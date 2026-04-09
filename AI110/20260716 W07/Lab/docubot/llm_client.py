@@ -53,7 +53,8 @@ class GeminiClient:
     """
         response = self.client.models.generate_content(
             model=GEMINI_MODEL_NAME,
-            contents=prompt)
+            contents=prompt
+        )
         return (response.text or "").strip()
 
     # -----------------------------------------------------------
@@ -110,5 +111,6 @@ Rules:
 
         response = self.client.models.generate_content(
             model=GEMINI_MODEL_NAME,
-            contents=prompt)
+            contents=prompt
+        )
         return (response.text or "").strip()
