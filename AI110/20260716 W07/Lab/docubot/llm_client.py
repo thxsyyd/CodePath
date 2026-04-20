@@ -51,11 +51,14 @@ class GeminiClient:
     You are a documentation assistant. 
     Answer this developer question: {query}
     """
-        response = self.client.models.generate_content(
-            model=GEMINI_MODEL_NAME,
-            contents=prompt
-        )
-        return (response.text or "").strip()
+        try:
+            response = self.client.models.generate_content(
+                model=GEMINI_MODEL_NAME,
+                contents=prompt
+            )
+            return (response.text or "").strip()
+        except Exception:
+            return "Unable to generate an answer. Check your API key or try again."
 
     # -----------------------------------------------------------
     # Phase 2: RAG style generation over retrieved snippets
@@ -109,8 +112,11 @@ Rules:
 - When you do answer, briefly mention which files you relied on.
 """
 
-        response = self.client.models.generate_content(
-            model=GEMINI_MODEL_NAME,
-            contents=prompt
-        )
-        return (response.text or "").strip()
+        try:
+            response = self.client.models.generate_content(
+                model=GEMINI_MODEL_NAME,
+                contents=prompt
+            )
+            return (response.text or "").strip()
+        except Exception:
+            return "I do not know based on the docs I have."
