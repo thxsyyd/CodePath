@@ -17,7 +17,7 @@ from google import genai
 
 # Central place to update the model name if needed.
 # You can swap this for a different Gemini model in the future.
-GEMINI_MODEL_NAME = "gemini-2.5-flash"
+GEMINI_MODEL_NAME = "gemma-3-27b-it"
 
 
 class GeminiClient:
@@ -57,8 +57,8 @@ class GeminiClient:
                 contents=prompt
             )
             return (response.text or "").strip()
-        except Exception:
-            return "Unable to generate an answer. Check your API key or try again."
+        except Exception as e:
+            return f"Unable to generate an answer. ({type(e).__name__}: {e})"
 
     # -----------------------------------------------------------
     # Phase 2: RAG style generation over retrieved snippets
@@ -118,5 +118,5 @@ Rules:
                 contents=prompt
             )
             return (response.text or "").strip()
-        except Exception:
-            return "I do not know based on the docs I have."
+        except Exception as e:
+            return f"API error — could not generate answer. ({type(e).__name__}: {e})"
