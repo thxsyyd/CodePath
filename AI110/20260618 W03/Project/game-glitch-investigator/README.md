@@ -33,10 +33,10 @@ It wrote the code, ran away, and now the game is unplayable.
 
 Describe your fixed game in numbered steps so a reader can follow along without watching a video:
 
-1. <!-- e.g., "Launch the app with `streamlit run app.py`" -->
-2. <!-- e.g., "Open the Developer Debug Info tab to see the secret number" -->
-3. <!-- e.g., "Enter a guess — the hint now correctly says Higher/Lower" -->
-4. <!-- e.g., "The secret number stays the same across submissions" -->
+1. <!-- How do you start the app? -->
+2. <!-- What does the working game look like before you make a guess? -->
+3. <!-- What happens when you submit a guess — what feedback does the game show? -->
+4. <!-- How do you know the bugs are fixed? -->
 5. <!-- Add more steps as needed -->
 
 **Screenshot** *(optional)*: <!-- Insert a screenshot of your fixed, winning game here -->
