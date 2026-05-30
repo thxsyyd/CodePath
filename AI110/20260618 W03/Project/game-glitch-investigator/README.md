@@ -39,6 +39,8 @@ Describe your fixed game in numbered steps so a reader can follow along without 
 4. <!-- e.g., "The secret number stays the same across submissions" -->
 5. <!-- Add more steps as needed -->
 
+**Screenshot** *(optional)*: <!-- Insert a screenshot of your fixed, winning game here -->
+
 ## 🧪 Test Results
 
 ```
@@ -49,4 +51,4 @@ Describe your fixed game in numbered steps so a reader can follow along without 
 
 ## 🚀 Stretch Features
 
-- [ ] [If you choose to complete Challenge 4, describe the Enhanced UI changes here]
+- [ ] [If you choose to complete Challenge 4, describe the Enhanced UI changes here — a screenshot is optional]
