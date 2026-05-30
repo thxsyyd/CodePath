@@ -29,10 +29,24 @@ It wrote the code, ran away, and now the game is unplayable.
 - [ ] Detail which bugs you found.
 - [ ] Explain what fixes you applied.
 
-## 📸 Demo
+## 📸 Demo Walkthrough
 
-- [ ] [Insert a screenshot of your fixed, winning game here]
+Describe your fixed game in numbered steps so a reader can follow along without watching a video:
+
+1. <!-- e.g., "Launch the app with `streamlit run app.py`" -->
+2. <!-- e.g., "Open the Developer Debug Info tab to see the secret number" -->
+3. <!-- e.g., "Enter a guess — the hint now correctly says Higher/Lower" -->
+4. <!-- e.g., "The secret number stays the same across submissions" -->
+5. <!-- Add more steps as needed -->
+
+## 🧪 Test Results
+
+```
+# Paste your pytest output here, e.g.:
+# pytest tests/
+# ========================= X passed in 0.XXs =========================
+```
 
 ## 🚀 Stretch Features
 
-- [ ] [If you choose to complete Challenge 4, insert a screenshot of your Enhanced Game UI here]
+- [ ] [If you choose to complete Challenge 4, describe the Enhanced UI changes here]
