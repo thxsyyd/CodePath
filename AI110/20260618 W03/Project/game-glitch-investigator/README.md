@@ -29,10 +29,26 @@ It wrote the code, ran away, and now the game is unplayable.
 - [ ] Detail which bugs you found.
 - [ ] Explain what fixes you applied.
 
-## 📸 Demo
+## 📸 Demo Walkthrough
 
-- [ ] [Insert a screenshot of your fixed, winning game here]
+Describe your fixed game in numbered steps so a reader can follow along without watching a video:
+
+1. <!-- Describe this step -->
+2. <!-- Describe this step -->
+3. <!-- Describe this step -->
+4. <!-- Describe this step -->
+5. <!-- Add more steps as needed -->
+
+**Screenshot** *(optional)*: <!-- Insert a screenshot of your fixed, winning game here -->
+
+## 🧪 Test Results
+
+```
+# Paste your pytest output here, e.g.:
+# pytest tests/
+# ========================= X passed in 0.XXs =========================
+```
 
 ## 🚀 Stretch Features
 
-- [ ] [If you choose to complete Challenge 4, insert a screenshot of your Enhanced Game UI here]
+- [ ] [If you choose to complete Challenge 4, describe the Enhanced UI changes here — a screenshot is optional]
