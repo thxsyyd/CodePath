@@ -1,0 +1,11 @@
+# 排除暂时不 push 的文件夹
+AI110/20260625 W4/
+AI110/20260702 W5/
+WEB101/
+Workshop/
+
+# Python 临时文件
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
