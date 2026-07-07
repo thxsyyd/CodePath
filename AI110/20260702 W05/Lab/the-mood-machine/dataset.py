@@ -23,6 +23,11 @@ POSITIVE_WORDS = [
     "chill",
     "relaxed",
     "amazing",
+    # Added in Part 3 to fix vocabulary gaps
+    "hopeful",
+    "proud",
+    "best",
+    "fire",
 ]
 
 NEGATIVE_WORDS = [
@@ -36,6 +41,9 @@ NEGATIVE_WORDS = [
     "stressed",
     "hate",
     "boring",
+    # Added in Part 3 to fix vocabulary gaps
+    "exhausted",
+    "harder",
 ]
 
 # ---------------------------------------------------------------------
@@ -92,3 +100,39 @@ TRUE_LABELS = [
 #
 # Remember to keep them aligned:
 #   len(SAMPLE_POSTS) == len(TRUE_LABELS)
+
+
+# ---------------------------------------------------------------------
+# Extended dataset — realistic language styles
+# ---------------------------------------------------------------------
+
+SAMPLE_POSTS.extend([
+    # Sarcasm
+    "I absolutely love getting stuck in traffic 🙄",
+    "Great, another Monday",
+    # Slang
+    "This concert was fire, lowkey the best night ever",
+    "The exam was sick tbh, way harder than expected",
+    # Emoji-driven
+    "Just got the offer 🎉🎉🎉",
+    "Kind of a rough day 😔",
+    "I'm fine 🙂",
+    # Mixed emotions
+    "Lowkey stressed but kind of proud of myself",
+    "Exhausted from work but happy the week is over",
+    # Ambiguous
+    "It is what it is",
+])
+
+TRUE_LABELS.extend([
+    "negative",   # sarcasm about traffic — "love" is misleading
+    "negative",   # sarcastic "great"
+    "positive",   # "fire" is slang for "great"
+    "mixed",      # "sick" is ambiguous, "harder than expected" is negative
+    "positive",   # celebration via emojis
+    "negative",   # "rough day" + sad emoji
+    "negative",   # "I'm fine 🙂" often masks negative feelings — debatable
+    "mixed",      # stressed + proud
+    "mixed",      # exhausted + happy
+    "neutral",    # non-committal expression
+])
