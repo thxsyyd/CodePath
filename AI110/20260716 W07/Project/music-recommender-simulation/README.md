@@ -101,42 +101,81 @@ You can add more tests in `tests/test_recommender.py`.
 
 ## Sample Recommendation Output
 
-Paste a sample of your recommender's output here as a text block so a reader can see what it produces:
+Output from `python -m src.main`, which runs three deliberately different
+profiles through the recommender:
 
 ```
-# e.g.:
-# User profile: genre=indie, mood=chill, energy=low
-# Recommendations:
-#   1. ...
-#   2. ...
-#   3. ...
+============================================================
+Profile: High-Energy Pop
+  prefs: {'genre': 'pop', 'mood': 'happy', 'energy': 0.9}
+------------------------------------------------------------
+  1. Sunrise City           (pop/happy)      score=4.84
+  2. Gym Hero               (pop/intense)    score=3.94
+  3. Festival Skies         (edm/happy)      score=2.96
+  4. Rooftop Lights         (indie pop/happy) score=2.72
+  5. Storm Runner           (rock/intense)   score=1.98
+
+============================================================
+Profile: Chill Lofi
+  prefs: {'genre': 'lofi', 'mood': 'chill', 'energy': 0.35}
+------------------------------------------------------------
+  1. Library Rain           (lofi/chill)     score=5.00
+  2. Midnight Coding        (lofi/chill)     score=4.86
+  3. Focus Flow             (lofi/focused)   score=3.90
+  4. Spacewalk Thoughts     (ambient/chill)  score=2.86
+  5. Coffee Shop Stories    (jazz/relaxed)   score=1.96
+
+============================================================
+Profile: Deep Intense Rock
+  prefs: {'genre': 'rock', 'mood': 'intense', 'energy': 0.9}
+------------------------------------------------------------
+  1. Storm Runner           (rock/intense)   score=4.98
+  2. Gym Hero               (pop/intense)    score=2.94
+  3. Concrete Rhymes        (hip-hop/intense) score=2.80
+  4. Festival Skies         (edm/happy)      score=1.96
+  5. Neon Overdrive         (edm/energetic)  score=1.90
 ```
 
-**Screenshot or video** *(optional)*: <!-- Insert a screenshot or demo video link here -->
+Each profile's top pick scores near the maximum (~5.0) because it matches on
+genre, mood, and energy at once. Lower-ranked songs win on energy closeness
+alone.
 
 ---
 
 ## Experiments You Tried
 
-Use this section to document the experiments you ran. For example:
+**Experiment: comparing three profiles.** Running High-Energy Pop, Chill Lofi,
+and Deep Intense Rock side by side showed the system responds sensibly to
+different tastes — each profile's #1 song matched on all three signals (genre +
+mood + energy) and scored close to the 5.0 maximum.
 
-- What happened when you changed the weight on genre from 2.0 to 0.5
-- What happened when you added tempo or valence to the score
-- How did your system behave for different types of users
+**Experiment: what dominates the ranking.** Because genre is weighted highest
+(+2.0), songs sharing the profile's genre reliably occupy the top slots. For the
+Chill Lofi profile, the top three results were all `lofi`; for High-Energy Pop,
+the top two were both `pop`. Energy closeness (up to +2.0) mainly decides the
+*lower* ranks, where several different-genre songs tie on "near the target
+energy."
+
+**What changing the genre weight would do.** If genre were lowered from 2.0 to,
+say, 0.5, energy and mood would drive ranking instead, so results would become
+more genre-diverse but less aligned with the listener's stated favorite genre —
+a direct precision-vs-diversity tradeoff.
 
 ---
 
 ## Limitations and Risks
 
-Summarize some limitations of your recommender.
+- **Filter bubble.** Because genre is weighted most heavily, the recommender
+  keeps surfacing the listener's existing favorite genre and rarely introduces
+  anything new. The Chill Lofi profile got three lofi songs in a row.
+- **Tiny catalog.** With only 15 songs, "top 5" is a third of the entire
+  library, so recommendations aren't very selective.
+- **No understanding of meaning.** It matches genre/mood labels exactly and does
+  math on energy; it has no notion of lyrics, language, or actual audio.
+- **Exact-match brittleness.** `indie pop` and `pop` are treated as completely
+  unrelated genres, even though a listener would hear them as close.
 
-Examples:
-
-- It only works on a tiny catalog
-- It does not understand lyrics or language
-- It might over favor one genre or mood
-
-You will go deeper on this in your model card.
+These are explored further in the model card.
 
 ---
 
