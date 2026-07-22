@@ -185,10 +185,17 @@ Read and complete `model_card.md`:
 
 [**Model Card**](model_card.md)
 
-Write 1 to 2 paragraphs here about what you learned:
+Building this made two things click. First, recommenders turn data into
+predictions through nothing more mysterious than a weighted scoring rule: assign
+points for how well each song's attributes line up with the listener's stated
+taste, add them up, and sort. No training, no black box — just arithmetic over
+features, which is why every pick can be explained.
 
-- about how recommenders turn data into predictions
-- about where bias or unfairness could show up in systems like this
+Second, bias doesn't require bad intent — it falls out of the design. By weighting
+genre highest I unintentionally built a filter bubble: the Chill Lofi profile got
+three lofi songs in a row and never saw anything new. That is exactly how real
+systems can trap users in narrow tastes or underexpose less-represented artists,
+and it happens quietly, as a side effect of a choice that seemed reasonable.
 
 
 
