@@ -26,6 +26,20 @@ def assess_risk(
             "reasons": ["No fix was produced."],
             "should_autofix": False,
         }
+    
+    # Guardrail: refuse to auto-fix when there's no real code to assess.
+    # Strip blank lines and comment-only lines; if nothing remains, defer to a human.
+    real_code_lines = [
+        line for line in original_code.splitlines()
+        if line.strip() and not line.strip().startswith("#")
+    ]
+    if not real_code_lines:
+        return {
+            "score": 0,
+            "level": "high",
+            "reasons": ["No analyzable code found (empty or comments only). Human review required."],
+            "should_autofix": False,
+        }
 
     original_lines = original_code.strip().splitlines()
     fixed_lines = fixed_code.strip().splitlines()
