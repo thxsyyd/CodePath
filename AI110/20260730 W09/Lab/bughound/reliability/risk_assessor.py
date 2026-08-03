@@ -62,6 +62,15 @@ def assess_risk(
         score -= 5
         reasons.append("Bare except was modified, verify correctness.")
 
+    # Over-editing check: how many lines actually changed?
+    original_set = set(original_lines)
+    fixed_set = set(fixed_lines)
+    changed_lines = len(original_set.symmetric_difference(fixed_set))
+    total_lines = max(len(original_lines), 1)
+
+    if changed_lines > 6 and changed_lines > total_lines * 1.5:
+        score -= 25
+        reasons.append("Fix changed a large portion of the code (possible over-editing).")
     # ----------------------------
     # Clamp score
     # ----------------------------
