@@ -187,6 +187,17 @@ class BugHoundAgent:
 
         return None
 
+    def _validate_severity(self, raw_severity: str) -> str:
+        """
+        Ensure severity is one of Low / Medium / High.
+        Unknown or malformed values default to High, so the risk
+        assessor never under-counts an issue it doesn't recognize.
+        """
+        normalized = str(raw_severity).strip().capitalize()
+        if normalized in ("Low", "Medium", "High"):
+            return normalized
+        return "High"
+
     def _normalize_issues(self, arr: List[Any]) -> List[Dict[str, str]]:
         issues: List[Dict[str, str]] = []
         for item in arr:
@@ -195,7 +206,7 @@ class BugHoundAgent:
             issues.append(
                 {
                     "type": str(item.get("type", "Issue")),
-                    "severity": str(item.get("severity", "Unknown")),
+                    "severity": self._validate_severity(item.get("severity", "High")),
                     "msg": str(item.get("msg", "")).strip(),
                 }
             )
