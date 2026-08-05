@@ -1,14 +1,21 @@
 """
-Core DocuBot class responsible for:
-- Loading documents from the docs/ folder
-- Building a keyword index and paragraph-level chunks
-- Retrieving relevant snippets for a query
-- Supporting retrieval-only answers
-- Supporting grounded RAG answers when paired with a Gemini client
+Core DocuBot Pro class.
+
+Responsibilities:
+- Load documents from the docs/ folder
+- Build a keyword index and paragraph-level chunks
+- Retrieve relevant snippets for a query
+- Support retrieval-only answers
+- Support grounded RAG answers when paired with a Gemini client
+- Run a confidence-gated RAG pipeline that decides whether to answer,
+  answer-with-caveat, or refuse (the reliability upgrade over the base project)
 """
 
 import os
 import glob
+
+from confidence import assess_confidence
+from trace_log import TraceLogger
 
 
 class DocuBot:
@@ -122,22 +129,9 @@ class DocuBot:
         """
         Retrieve the top_k most relevant paragraph chunks whose score is at
         least min_score. Returns a list of (filename, chunk_text) tuples.
-
-        If no chunk scores >= min_score, returns an empty list so the caller
-        can respond with "I do not know."
         """
-        scored = []
-        for filename, chunk_id, chunk_text in self.chunks:
-            score = self.score_document(query, chunk_text)
-            if score >= min_score:
-                scored.append((score, filename, chunk_text))
-
-        scored.sort(reverse=True)
-
-        results = []
-        for score, filename, chunk_text in scored[:top_k]:
-            results.append((filename, chunk_text))
-        return results
+        scored = self.retrieve_with_scores(query, top_k=top_k, min_score=min_score)
+        return [(filename, chunk_text) for _, filename, chunk_text in scored]
 
     def retrieve_with_scores(self, query, top_k=3, min_score=1):
         """
@@ -175,7 +169,8 @@ class DocuBot:
 
     def answer_rag(self, query, top_k=3):
         """
-        RAG mode: retrieve snippets, then ask Gemini to answer using only them.
+        Plain RAG mode (base project behavior): retrieve snippets, then ask
+        Gemini to answer using only them. No confidence gating.
         """
         if self.llm_client is None:
             raise RuntimeError(
@@ -188,6 +183,88 @@ class DocuBot:
             return "I do not know based on these docs."
 
         return self.llm_client.answer_from_snippets(query, snippets)
+
+    # -----------------------------------------------------------
+    # Confidence-gated RAG (the reliability upgrade)
+    # -----------------------------------------------------------
+
+    def answer_with_confidence(self, query, top_k=3, min_score=1, logger=None):
+        """
+        The upgraded pipeline. Steps:
+            1. RETRIEVE   - get scored chunks
+            2. ASSESS     - score confidence from retrieval signals
+            3. DECIDE     - answer / answer-with-caveat / refuse (guardrail)
+            4. GENERATE   - only call the LLM when the guardrail allows it
+
+        Returns a dict:
+            {
+              "answer": str,
+              "confidence": "HIGH" | "MEDIUM" | "LOW",
+              "score": float,
+              "answered": bool,
+              "reasons": [str, ...],
+              "sources": [filename, ...],
+            }
+
+        If a TraceLogger is passed, each step is recorded for later review.
+        """
+        log = logger or TraceLogger(query)
+
+        # 1. RETRIEVE
+        scored = self.retrieve_with_scores(query, top_k=top_k, min_score=min_score)
+        sources = [filename for _, filename, _ in scored]
+        log.step("RETRIEVE", f"{len(scored)} chunk(s) above min_score={min_score}; "
+                             f"sources={sources or 'none'}")
+
+        # 2. ASSESS confidence
+        report = assess_confidence(scored)
+        log.step("ASSESS", f"confidence={report.level} (score={report.score}); "
+                           + "; ".join(report.reasons))
+
+        # 3. DECIDE - guardrail
+        if not report.should_answer:
+            log.step("DECIDE", "Guardrail: confidence too low -> refuse and defer to human.")
+            answer = (
+                "I'm not confident enough to answer this from the documentation. "
+                "Please verify with a human or rephrase the question."
+            )
+            log.step("RESPOND", "Refused (low confidence).")
+            return {
+                "answer": answer,
+                "confidence": report.level,
+                "score": report.score,
+                "answered": False,
+                "reasons": report.reasons,
+                "sources": sources,
+            }
+
+        # 4. GENERATE via the LLM (only reached when the guardrail allows it)
+        if self.llm_client is None:
+            raise RuntimeError(
+                "Confidence RAG requires an LLM client. Provide a GeminiClient instance."
+            )
+
+        log.step("DECIDE", f"Confidence sufficient ({report.level}) -> generate answer.")
+        snippets = [(filename, chunk_text) for _, filename, chunk_text in scored]
+        answer = self.llm_client.answer_from_snippets(query, snippets)
+
+        # Attach a caveat for medium-confidence answers.
+        if report.needs_caveat:
+            answer = (
+                "[Medium confidence - please verify]\n" + answer
+            )
+            log.step("RESPOND", "Answered with a verification caveat (medium confidence).")
+        else:
+            log.step("RESPOND", "Answered normally (high confidence).")
+
+        return {
+            "answer": answer,
+            "confidence": report.level,
+            "score": report.score,
+            "answered": True,
+            "reasons": report.reasons,
+            "sources": sources,
+        }
 
     def full_corpus_text(self):
         """
