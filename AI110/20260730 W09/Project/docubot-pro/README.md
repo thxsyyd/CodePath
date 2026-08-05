@@ -1,0 +1,179 @@
+# DocuBot Pro
+
+A grounded documentation assistant that answers developer questions from a
+project's own docs — and **knows when to refuse**. DocuBot Pro extends a
+retrieval-augmented generation (RAG) system with a confidence layer, a refusal
+guardrail, decision-trace logging, and an offline evaluation harness, so the
+assistant stays trustworthy instead of confidently guessing.
+
+---
+
+## 1. What this project is
+
+DocuBot Pro is an extension of **DocuBot**, a RAG documentation assistant I built
+earlier in the course. The original DocuBot could retrieve paragraphs from a set
+of Markdown docs and ask an LLM (Google Gemini) to answer using only those
+paragraphs. It worked, but it had no sense of *how good* its own retrieval was:
+on a weak or irrelevant match it would still pass whatever it found to the model
+and hope for the best.
+
+DocuBot Pro adds the reliability layer the original was missing. Before
+answering, it scores the quality of its retrieval, and that score decides what
+happens next: answer confidently, answer with a caveat, or refuse and defer to a
+human. Every decision is logged so it can be reviewed after the fact.
+
+## 2. The AI feature (and how it's integrated)
+
+The core AI feature is **retrieval-augmented generation** with a **confidence-gated
+guardrail** layered on top. It is not a side panel that prints debug info — the
+confidence score actually changes what the system does:
+
+- **Retrieve** — keyword scoring over paragraph-level chunks (stop words removed).
+- **Assess** — `confidence.py` reads three retrieval signals (top score, number
+  of hits, and the gap between the best and second-best chunk) and produces a
+  HIGH / MEDIUM / LOW confidence level.
+- **Decide (guardrail)** — the level determines the behavior:
+  - **LOW** → refuse and defer to a human; the LLM is never called.
+  - **MEDIUM** → answer, but prepend a "please verify" caveat.
+  - **HIGH** → answer normally.
+- **Generate** — only when the guardrail allows it does `llm_client.py` call
+  Gemini, and only with the retrieved snippets as context.
+
+Because the guardrail runs *before* the model, a low-confidence question (for
+example, one about a topic the docs never mention) is refused without spending
+an API call — the system fails safe rather than hallucinating.
+
+## 3. Architecture
+
+The full pipeline and its reliability side-channels (trace logging, human review,
+the evaluation harness) are described in the diagram:
+
+- Source: [`diagrams/architecture.mmd`](diagrams/architecture.mmd) (Mermaid)
+
+```
+Developer question
+   -> RETRIEVE   (score paragraph chunks by keyword)
+   -> ASSESS     (confidence from top_score, hit_count, score_gap)
+   -> DECIDE     (guardrail)
+        LOW    -> REFUSE  (defer to human, no LLM call)
+        MEDIUM -> GENERATE with a verify caveat
+        HIGH   -> GENERATE normally
+   -> Answer + source files
+Every decision is written to logs/trace.log for human review.
+```
+
+## 4. Project structure
+
+```
+docubot-pro/
+├── docubot.py          Core class: load, chunk, index, retrieve, and the
+│                        confidence-gated answer_with_confidence() pipeline
+├── confidence.py       Rule-based confidence scoring + answer/caveat/refuse policy
+├── trace_log.py        Step-by-step decision logging (RETRIEVE -> ... -> RESPOND)
+├── llm_client.py       Gemini wrapper; answers using only retrieved snippets
+├── dataset.py          Sample queries and a fallback corpus
+├── evaluation.py       Offline harness: checks answer/refuse decisions vs labels
+├── main.py             CLI: Confidence RAG / Plain RAG / Retrieval-only modes
+├── docs/               The documentation corpus (AUTH, API_REFERENCE, DATABASE, SETUP)
+├── diagrams/
+│   └── architecture.mmd   Mermaid architecture diagram (source)
+└── assets/             Reproducible run logs and demo transcripts
+```
+
+## 5. Setup
+
+Requirements: Python 3.9+ and a Google Gemini API key (free tier is enough).
+
+```bash
+# 1. Install dependencies
+pip install -r requirements.txt
+
+# 2. Configure your API key
+cp .env.example .env
+# then edit .env and set GEMINI_API_KEY=your_key_here
+```
+
+You can get a free key from Google AI Studio (https://aistudio.google.com/app/api-keys).
+
+## 6. Running it
+
+```bash
+python main.py
+```
+
+Choose a mode:
+
+- **1) Confidence RAG** — the upgraded pipeline with the guardrail and trace logging.
+- **2) Plain RAG** — the original behavior, with no confidence gating (for comparison).
+- **3) Retrieval only** — raw snippets, no LLM.
+
+The offline evaluation harness (no API calls, fully reproducible) can be run with:
+
+```bash
+python evaluation.py
+```
+
+### Example: a confident answer (HIGH)
+
+```
+Q: Where is the auth token generated?
+Confidence: HIGH (score 0.67)  Answered: True
+Sources: ['AUTH.md', 'AUTH.md', 'AUTH.md']
+----------------------------------------------------------------
+Based on the provided documentation, the auth token is generated by the
+generate_access_token function located in the auth_utils.py module.
+I relied on the following file to answer your question:
+- AUTH.md
+
+=== Trace ===
+  RETRIEVE  | 3 chunk(s) above min_score=1; sources=['AUTH.md','AUTH.md','AUTH.md']
+  ASSESS    | confidence=HIGH (score=0.67); Strong top match (score 4).
+  DECIDE    | Confidence sufficient (HIGH) -> generate answer.
+  RESPOND   | Answered normally (high confidence).
+```
+
+### Example: the guardrail refusing (LOW)
+
+```
+Q: Is there any mention of payment processing?
+Confidence: LOW (score 0.0)  Answered: False
+Sources: none
+----------------------------------------------------------------
+I'm not confident enough to answer this from the documentation.
+Please verify with a human or rephrase the question.
+
+=== Trace ===
+  RETRIEVE  | 0 chunk(s) above min_score=1; sources=none
+  ASSESS    | confidence=LOW (score=0.0); No relevant chunks were retrieved.
+  DECIDE    | Guardrail: confidence too low -> refuse and defer to human.
+  RESPOND   | Refused (low confidence).
+```
+
+The docs contain no payment content, so DocuBot Pro refuses instead of guessing —
+and, because the guardrail runs before generation, no API call is made.
+
+## 7. Reliability and guardrails
+
+- **Refusal guardrail** — LOW-confidence questions are refused and escalated to a
+  human, rather than answered from weak evidence.
+- **Confidence caveats** — MEDIUM-confidence answers are returned with an explicit
+  "please verify" warning.
+- **Decision tracing** — every query's RETRIEVE → ASSESS → DECIDE → RESPOND steps
+  are printed and appended to `logs/trace.log`, so behavior is auditable.
+- **Evaluation harness** — `evaluation.py` checks the answer/refuse decision
+  against labeled cases (answerable questions and should-refuse cases such as
+  empty input, gibberish, and off-topic questions). Current result: 8/8 pass.
+
+## 8. Limitations and reflection
+
+Retrieval is still keyword-based, so some answerable questions score low and get
+refused (a false negative) — the system is deliberately conservative, preferring
+to refuse over to guess. A fuller discussion of the system's behavior, biases,
+and responsible-use guidance is in the model card:
+
+- [`model_card.md`](model_card.md)
+
+## Acknowledgements
+
+Built for CodePath AI110 as an Applied AI System, extending the DocuBot RAG
+tinker project. Uses Google Gemini for generation.
