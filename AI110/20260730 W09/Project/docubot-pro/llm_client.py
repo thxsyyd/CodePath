@@ -1,0 +1,111 @@
+"""
+Gemini client wrapper used by DocuBot.
+
+Handles:
+- Configuring the Gemini client from the GEMINI_API_KEY environment variable
+- Naive "generation only" answers over the full docs corpus (baseline)
+- RAG style answers that use only retrieved snippets
+"""
+
+import os
+from google import genai
+
+# Central place to update the model name if needed.
+GEMINI_MODEL_NAME = "gemini-flash-lite-latest"
+
+
+class GeminiClient:
+    """
+    Simple wrapper around the Gemini model.
+
+    Usage:
+        client = GeminiClient()
+        answer = client.naive_answer_over_full_docs(query, all_text)
+        # or
+        answer = client.answer_from_snippets(query, snippets)
+    """
+
+    def __init__(self):
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            raise RuntimeError(
+                "Missing GEMINI_API_KEY environment variable. "
+                "Set it in your shell or .env file to enable LLM features."
+            )
+
+        self.client = genai.Client(api_key=api_key)
+
+    # -----------------------------------------------------------
+    # Baseline: naive generation over full docs
+    # -----------------------------------------------------------
+
+    def naive_answer_over_full_docs(self, query, all_text):
+        # This baseline intentionally ignores all_text and sends a generic
+        # prompt, to demonstrate how an ungrounded model hallucinates.
+        prompt = f"""
+    You are a documentation assistant. 
+    Answer this developer question: {query}
+    """
+        try:
+            response = self.client.models.generate_content(
+                model=GEMINI_MODEL_NAME,
+                contents=prompt
+            )
+            return (response.text or "").strip()
+        except Exception as e:
+            return f"Unable to generate an answer. ({type(e).__name__}: {e})"
+
+    # -----------------------------------------------------------
+    # RAG style generation over retrieved snippets
+    # -----------------------------------------------------------
+
+    def answer_from_snippets(self, query, snippets):
+        """
+        Generate an answer using only the retrieved snippets.
+
+        snippets: list of (filename, text) tuples selected by DocuBot.retrieve
+        """
+
+        if not snippets:
+            return "I do not know based on the docs I have."
+
+        context_blocks = []
+        for filename, text in snippets:
+            block = f"File: {filename}\n{text}\n"
+            context_blocks.append(block)
+
+        context = "\n\n".join(context_blocks)
+
+        prompt = f"""
+You are a cautious documentation assistant helping developers understand a codebase.
+
+You will receive:
+- A developer question
+- A small set of snippets from project files
+
+Your job:
+- Answer the question using only the information in the snippets.
+- If the snippets do not provide enough evidence, refuse to guess.
+
+Snippets:
+{context}
+
+Developer question:
+{query}
+
+Rules:
+- Use only the information in the snippets. Do not invent new functions,
+  endpoints, or configuration values.
+- If the snippets are not enough to answer confidently, reply exactly:
+  "I do not know based on the docs I have."
+- When you do answer, briefly mention which files you relied on.
+"""
+
+        try:
+            response = self.client.models.generate_content(
+                model=GEMINI_MODEL_NAME,
+                contents=prompt
+            )
+            return (response.text or "").strip()
+        except Exception as e:
+            return f"API error — could not generate answer. ({type(e).__name__}: {e})"
