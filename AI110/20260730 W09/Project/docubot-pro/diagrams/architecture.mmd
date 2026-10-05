@@ -1,0 +1,29 @@
+flowchart TD
+    User([Developer question]) --> Retrieve
+
+    subgraph Pipeline[DocuBot Pro Pipeline]
+        Retrieve[RETRIEVE<br/>keyword scoring over<br/>paragraph chunks]
+        Assess[ASSESS<br/>confidence layer:<br/>top_score, hit_count, gap]
+        Decide{DECIDE<br/>should_answer?}
+        Generate[GENERATE<br/>Gemini answers using<br/>only retrieved snippets]
+        Caveat[Attach<br/>verify caveat]
+        Refuse[REFUSE<br/>defer to human]
+    end
+
+    Retrieve -->|scored chunks| Assess
+    Assess -->|ConfidenceReport| Decide
+
+    Decide -->|LOW: guardrail| Refuse
+    Decide -->|HIGH| Generate
+    Decide -->|MEDIUM| Caveat
+    Caveat --> Generate
+
+    Generate --> Answer([Answer + sources])
+    Refuse --> Answer
+
+    Assess -.decision steps.-> Trace[(Trace log<br/>logs/trace.log)]
+    Decide -.decision steps.-> Trace
+    Trace -.reviewed by.-> Human([Human review])
+    Refuse -.escalates to.-> Human
+
+    Eval[Evaluation harness<br/>evaluation.py] -.offline checks.-> Assess
