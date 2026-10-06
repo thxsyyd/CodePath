@@ -1,11 +1,16 @@
-# 排除暂时不 push 的文件夹
-AI110/20260625 W4/
-AI110/20260702 W5/
-WEB101/
-Workshop/
+# macOS
+.DS_Store
 
-# Python 临时文件
+# Secrets
+.env
+
+# Python
 __pycache__/
 *.pyc
 .pytest_cache/
 .venv/
+
+# Local-only course folders
+TIP101/
+WEB101/
+Workshop/
